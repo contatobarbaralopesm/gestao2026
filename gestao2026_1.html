@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gestão 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --yellow:    #D8E63C;
+  --yellow-dk: #b5c400;
+  --yellow-lt: #F2F9A0;
+  --violet:    #D6B4FC;
+  --violet-dk: #9B59F5;
+  --violet-lt: #F3E8FF;
+  --blue-dk:   #17184B;
+  --blue-md:   #273287;
+  --blue-lt:   #D3DDE7;
+  --bg:        #F5F5F2;
+  --surface:   #FFFFFF;
+  --surface2:  #F0EEE9;
+  --border:    #EAEAE4;
+  --positive:  #1A7F5A;
+  --positive-bg:#E6F7F1;
+  --negative:  #C0392B;
+  --negative-bg:#FDECEA;
+  --text:      #17184B;
+  --text2:     #555577;
+  --text3:     #AAAABC;
+  --font: 'Poppins', sans-serif;
+  --r: 20px;
+  --r-sm: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px}
+
+/* ── SHELL ── */
+.shell{display:flex;flex-direction:column;min-height:100dvh;max-width:430px;margin:0 auto}
+@media(min-width:900px){
+  .shell{flex-direction:row;max-width:1140px;min-height:100dvh}
+  .sidebar{display:flex!important}
+  .bottom-nav{display:none!important}
+  .top-bar{display:none!important}
+  .main{padding:32px 36px 40px}
+  .cards-row{grid-template-columns:repeat(4,1fr)}
+  .dash-charts{grid-template-columns:1fr 1fr}
+  .toast{bottom:28px}
+}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  display:none;flex-direction:column;
+  width:220px;flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  padding:28px 16px;
+  position:sticky;top:0;height:100dvh;overflow-y:auto;
+}
+.s-logo{padding:4px 8px 24px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.s-logo h1{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.s-logo h1 em{font-style:normal;color:var(--violet-dk)}
+.s-logo p{font-size:11px;color:var(--text3);font-weight:400;margin-top:1px}
+.snav{display:flex;flex-direction:column;gap:3px}
+.snav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:.15s}
+.snav-item:hover{background:var(--surface2)}
+.snav-item.active{background:var(--blue-dk);color:#fff}
+.snav-item.active .si{color:#fff}
+.si{font-size:17px;line-height:1}
+.s-bottom{margin-top:auto;padding-top:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+
+/* ── TOP BAR (mobile) ── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.top-logo{font-size:17px;font-weight:700;color:var(--text)}
+.top-logo em{font-style:normal;color:var(--violet-dk)}
+.top-actions{display:flex;gap:6px}
+.top-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer}
+
+/* ── MAIN ── */
+.main{flex:1;padding:18px 16px 96px;overflow-y:auto}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:50}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:3px 0;color:var(--text3);font-size:10px;font-weight:500;transition:.15s}
+.bnav-item.active{color:var(--blue-dk)}
+.bnav-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:.15s}
+.bnav-item.active .bnav-icon{background:var(--yellow);box-shadow:0 2px 8px rgba(216,230,60,.4)}
+
+/* ── PAGE HEADER ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.ph-title{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.ph-sub{font-size:11px;color:var(--text3);font-weight:400;margin-top:1px}
+
+/* ── MONTH PILL ── */
+.mpill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;appearance:none;outline:none}
+.mpill:focus{border-color:var(--violet-dk)}
+
+/* ── HERO CARD ── */
+.hero{background:var(--blue-dk);border-radius:var(--r);padding:22px 20px;margin-bottom:12px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(216,230,60,.12);right:-30px;top:-40px}
+.hero::after{content:'';position:absolute;width:90px;height:90px;border-radius:50%;background:rgba(214,180,252,.1);right:50px;bottom:-30px}
+.hero-lbl{font-size:11px;font-weight:500;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.hero-val{font-size:36px;font-weight:700;letter-spacing:-2px;line-height:1;color:#fff}
+.hero-chips{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.hchip{border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.hchip.in{background:var(--yellow);color:var(--blue-dk)}
+.hchip.out{background:rgba(214,180,252,.25);color:var(--violet)}
+
+/* ── ACCOUNT CARDS ── */
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.acard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;transition:.2s}
+.acard:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.acard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.acard-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.acard-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.acard-val{font-size:20px;font-weight:700;letter-spacing:-.8px;line-height:1.1}
+.acard-meta{font-size:10px;color:var(--text3);margin-top:5px;display:flex;gap:8px}
+.m-in{color:var(--positive);font-weight:600}
+.m-out{color:var(--negative);font-weight:600}
+
+/* Yellow highlight card */
+.acard.yellow-card{background:var(--yellow)}
+.acard.yellow-card .acard-lbl{color:rgba(23,24,75,.5)}
+.acard.yellow-card .acard-val{color:var(--blue-dk)}
+.acard.yellow-card .acard-meta{color:rgba(23,24,75,.5)}
+.acard.yellow-card .m-in,.acard.yellow-card .m-out{color:var(--blue-dk)}
+.acard.violet-card{background:var(--violet-lt);border-color:var(--violet)}
+.acard.violet-card .acard-val{color:var(--violet-dk)}
+
+/* ── CHARTS AREA ── */
+.dash-charts{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.cc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cc-title{font-size:14px;font-weight:600;color:var(--text)}
+.cc-pill{font-size:11px;font-weight:500;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text2)}
+
+/* Stat row (income/spend numbers) */
+.stat-row{display:flex;gap:24px;margin-bottom:16px}
+.stat-item{}
+.stat-lbl{font-size:11px;color:var(--text3);font-weight:400;margin-bottom:2px}
+.stat-val{font-size:24px;font-weight:700;letter-spacing:-1px}
+.stat-trend{font-size:11px;font-weight:500;margin-top:2px}
+.trend-up{color:var(--positive)}.trend-dn{color:var(--negative)}
+
+/* Bubble chart (visitors style) */
+.bubble-wrap{position:relative;height:130px;display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:12px}
+.bubble{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.b-val{font-weight:700;line-height:1}
+.b-lbl{font-size:9px;font-weight:500;opacity:.8;margin-top:1px}
+.bubble.b-yellow{background:var(--yellow);color:var(--blue-dk)}
+.bubble.b-blue{background:var(--blue-lt);color:var(--blue-dk)}
+.bubble.b-violet{background:var(--violet);color:var(--blue-dk)}
+
+/* Progress bars */
+.prog-list{display:flex;flex-direction:column;gap:10px}
+.prog-item{}
+.prog-hd{display:flex;justify-content:space-between;font-size:12px;font-weight:500;margin-bottom:5px}
+.prog-lbl{color:var(--text2)}
+.prog-pct{color:var(--text);font-weight:600}
+.prog-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+/* Saving rate */
+.rate-num{font-size:44px;font-weight:700;letter-spacing:-2px;line-height:1;margin:8px 0 4px}
+.rate-bar{height:8px;background:var(--surface2);border-radius:4px;margin-top:12px;overflow:hidden}
+.rate-fill{height:100%;border-radius:4px;background:var(--yellow);transition:width .8s}
+
+/* ── FORM ── */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.type-toggle{display:flex;background:var(--surface2);border-radius:12px;padding:3px;gap:3px;margin-bottom:20px}
+.tog-btn{flex:1;padding:9px 0;border-radius:10px;border:none;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;color:var(--text3)}
+.tog-btn.expense.active{background:var(--blue-dk);color:#fff}
+.tog-btn.income.active{background:var(--positive);color:#fff}
+.form-stack{display:flex;flex-direction:column;gap:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.flbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.fi,.fs{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;font-weight:400;outline:none;transition:.15s;width:100%;appearance:none}
+.fi:focus,.fs:focus{border-color:var(--violet-dk);box-shadow:0 0 0 3px rgba(155,89,245,.1);background:#fff}
+.fi::placeholder{color:var(--text3)}
+.value-fi{font-size:24px;font-weight:700;letter-spacing:-.5px;padding:14px 16px;caret-color:transparent}
+.btn-sub{width:100%;padding:14px;border-radius:14px;border:none;font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;background:var(--yellow);color:var(--blue-dk)}
+.btn-sub:hover{background:var(--yellow-dk);color:#fff}
+.btn-sub:active{transform:scale(.98)}
+.btn-sub.income-mode{background:var(--positive);color:#fff}
+
+/* Quick bals */
+.quick-bals{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.qbal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px}
+.qbal-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.qbal-val{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.qbal-val.pos{color:var(--positive)}.qbal-val.neg{color:var(--negative)}
+
+/* ── EXTRATO ── */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.table-hd{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.table-title{font-size:14px;font-weight:600;color:var(--text)}
+.tcount{font-size:11px;font-weight:600;background:var(--yellow);color:var(--blue-dk);padding:3px 10px;border-radius:20px}
+.tx-list{display:flex;flex-direction:column}
+.tx-item{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);transition:.1s;cursor:default}
+.tx-item:last-child{border-bottom:none}
+.tx-item:hover{background:#fafafa}
+/* Category icon bubble */
+.cat-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tx-body{flex:1;min-width:0}
+.tx-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-sub{font-size:11px;color:var(--text3);font-weight:400;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.tx-right{text-align:right;flex-shrink:0}
+.tx-amt{font-size:14px;font-weight:700;letter-spacing:-.3px}
+.tx-amt.out{color:var(--negative)}.tx-amt.in{color:var(--positive)}
+.tx-dt{font-size:10px;color:var(--text3);margin-top:1px}
+.tx-del{background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:6px;display:flex;align-items:center;transition:.15s;flex-shrink:0}
+.tx-del:hover{color:var(--negative)}
+.tag{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.tag-fixo{background:#FFF8E1;color:#B45309}
+.tag-var{background:var(--violet-lt);color:var(--violet-dk)}
+.tag-dinheiro{background:var(--positive-bg);color:var(--positive)}
+.tag-va{background:#FFF7ED;color:#C2410C}
+.tag-cultura{background:var(--violet-lt);color:var(--violet-dk)}
+.tag-poupanca{background:#EFF6FF;color:#1D4ED8}
+.table-footer{padding:12px 18px;border-top:1px solid var(--border);background:var(--surface2);display:flex;gap:20px;flex-wrap:wrap;font-size:12px;font-weight:500}
+.tf-item{color:var(--text2)}
+.tf-item strong{color:var(--text);font-weight:700}
+
+/* ── UTILS ── */
+.empty{padding:48px 24px;text-align:center;color:var(--text3);font-size:13px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--blue-dk);color:#fff;padding:11px 22px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;white-space:nowrap;box-shadow:0 4px 24px rgba(23,24,75,.2);animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media(min-width:900px){.toast{bottom:28px}}
+input[type="file"]{display:none}
+.btn-bk{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:.15s;width:100%}
+.btn-bk:hover{border-color:var(--violet-dk);color:var(--text);background:var(--violet-lt)}
+.import-lbl{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:.15s;width:100%}
+.import-lbl:hover{border-color:var(--violet-dk);color:var(--text);background:var(--violet-lt)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+/* ── CATEGORY ICONS & COLORS ── */
+const CAT_META = {
+  'Alimentação': { icon:'🍽️', bg:'#FFF3E0', label:'Alimentação' },
+  'Casa':        { icon:'🏠', bg:'#E3F2FD', label:'Casa' },
+  'Mobilidade':  { icon:'🚗', bg:'#F3E5F5', label:'Mobilidade' },
+  'Lazer':       { icon:'🎉', bg:'#FCE4EC', label:'Lazer' },
+  'Telefone':    { icon:'📱', bg:'#E8F5E9', label:'Telefone' },
+  'Pessoal':     { icon:'👤', bg:'#FFF8E1', label:'Pessoal' },
+  'Saúde':       { icon:'💊', bg:'#FFEBEE', label:'Saúde' },
+  'Educação':    { icon:'📚', bg:'#E0F7FA', label:'Educação' },
+  'Estética':    { icon:'💅', bg:'#FCE4EC', label:'Estética' },
+  'Investimento':{ icon:'📈', bg:'#E8F5E9', label:'Investimento' },
+  'Viagem':      { icon:'✈️', bg:'#E3F2FD', label:'Viagem' },
+  'Trabalho':    { icon:'💼', bg:'#F3E5F5', label:'Trabalho' },
+  'Entrada':     { icon:'💰', bg:'#E6F7F1', label:'Entrada' },
+};
+const catIcon = cat => CAT_META[cat]?.icon || '💸';
+const catBg   = cat => CAT_META[cat]?.bg   || '#F5F5F5';
+
+const CONTA_META = {
+  dinheiro: { icon:'💵', bg:'#E6F7F1', label:'Dinheiro / Pix' },
+  va:       { icon:'🍱', bg:'#FFF3E0', label:'Vale Alimentação' },
+  cultura:  { icon:'🎭', bg:'#F3E5F5', label:'Vale Cultura' },
+  poupanca: { icon:'🏦', bg:'#EFF6FF', label:'Poupança' },
+};
+
+const CATS_DATA = [
+  {custo:'Custo Variável',cat:'Alimentação',prod:'Supermercado'},
+  {custo:'Custo Variável',cat:'Alimentação',prod:'Restaurante'},
+  {custo:'Custo Fixo',    cat:'Alimentação',prod:'Sacolão'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'Aluguel/ IPTU/ Condomínio'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'Internet'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'CEMIG'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'Gás'},
+  {custo:'Custo Variável',cat:'Casa',       prod:'Reparos casa'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'Faxina'},
+  {custo:'Custo Fixo',    cat:'Educação',   prod:'Estudos/ cursos'},
+  {custo:'Custo Variável',cat:'Estética',   prod:'Salão Cabelo'},
+  {custo:'Custo Variável',cat:'Estética',   prod:'Manicure'},
+  {custo:'Custo Variável',cat:'Lazer',      prod:'Rolê'},
+  {custo:'Custo Variável',cat:'Lazer',      prod:'Lanches'},
+  {custo:'Custo Variável',cat:'Mobilidade', prod:'Uber/99'},
+  {custo:'Custo Variável',cat:'Mobilidade', prod:'Gasolina'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Presente'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Roupa'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Decoração'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Casinha'},
+  {custo:'Custo Variável',cat:'Investimento',prod:'Reserva'},
+  {custo:'Custo Variável',cat:'Saúde',      prod:'Farmácia'},
+  {custo:'Custo Variável',cat:'Saúde',      prod:'Atividade física'},
+  {custo:'Custo Variável',cat:'Telefone',   prod:'Streaming/ ICloud'},
+  {custo:'Custo Variável',cat:'Viagem',     prod:'Viagem'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Cartão Crédito'},
+  {custo:'Custo Fixo',    cat:'Trabalho',   prod:'Pag. Freelas'},
+];
+const CATS = [...new Set(CATS_DATA.map(c=>c.cat))];
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const LS = 'gestao2026_v3';
+const fmt  = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtS = v => Math.abs(v)>=1000?'R$'+(v/1000).toFixed(1)+'k':fmt(v);
+const now  = new Date();
+const curMK = () => `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+const getMK  = d  => { const dt=new Date(d+'T12:00:00'); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; };
+const mkLbl  = mk => { const [y,m]=mk.split('-'); return `${MONTHS[parseInt(m)-1]} ${y}`; };
+
+function calcBal(txs){
+  const b={dinheiro:0,va:0,cultura:0,poupanca:0};
+  txs.forEach(t=>{ if(b[t.conta]!==undefined) b[t.conta]+=t.type==='income'?t.value:-t.value; });
+  return b;
+}
+function loadTx(){try{return JSON.parse(localStorage.getItem(LS))||[];}catch{return[];}}
+function saveTx(t){localStorage.setItem(LS,JSON.stringify(t));}
+
+/* ── CHARTS ── */
+function BarChart({months, income, spend}){
+  const ref=useRef(); const ch=useRef();
+  useEffect(()=>{
+    if(!ref.current) return;
+    if(ch.current) ch.current.destroy();
+    ch.current=new Chart(ref.current,{
+      type:'bar',
+      data:{
+        labels:months,
+        datasets:[
+          {label:'Entradas',data:income,backgroundColor:'#D8E63C',borderRadius:8,borderSkipped:false},
+          {label:'Saídas', data:spend, backgroundColor:'#D6B4FC',borderRadius:8,borderSkipped:false},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'#17184B',borderColor:'#273287',borderWidth:1,titleColor:'rgba(255,255,255,.6)',bodyColor:'#fff',padding:10}},
+        scales:{x:{grid:{display:false},ticks:{color:'#AAAABC',font:{family:'Poppins',size:10}},border:{display:false}},
+                y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#AAAABC',font:{family:'Poppins',size:10},callback:v=>fmtS(v)},border:{display:false}}}}
+    });
+    return ()=>{ if(ch.current) ch.current.destroy(); };
+  },[months,income,spend]);
+  return <div style={{height:'140px'}}><canvas ref={ref}/></div>;
+}
+
+function DonutChart({data}){
+  const ref=useRef(); const ch=useRef();
+  useEffect(()=>{
+    if(!ref.current) return;
+    if(ch.current) ch.current.destroy();
+    ch.current=new Chart(ref.current,{
+      type:'doughnut',
+      data:{labels:data.map(d=>d.l),datasets:[{data:data.map(d=>d.v),backgroundColor:data.map(d=>d.c),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:true,cutout:'68%',
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`},backgroundColor:'#17184B',borderColor:'#273287',borderWidth:1,bodyColor:'#fff',titleColor:'rgba(255,255,255,.6)',padding:10}}}
+    });
+    return ()=>{ if(ch.current) ch.current.destroy(); };
+  },[data]);
+  return <canvas ref={ref} height="180"/>;
+}
+
+/* ── APP ── */
+function App(){
+  const [page,setPage]   = useState('dashboard');
+  const [txs,setTxs]     = useState(loadTx);
+  const [toast,setToast] = useState(null);
+  const [selMK,setSelMK] = useState(curMK);
+  const [type,setType]   = useState('expense');
+  const [cents,setCents] = useState(0);
+  const [dispVal,setDispVal] = useState('');
+  const [form,setForm]   = useState({
+    conta:'dinheiro',cat:'Alimentação',prod:'Supermercado',custo:'Custo Variável',
+    date:now.toISOString().slice(0,10),detalhe:'',srcIncome:'',
+  });
+
+  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2400);};
+
+  useEffect(()=>{
+    const p=CATS_DATA.filter(c=>c.cat===form.cat);
+    if(p.length>0) setForm(f=>({...f,prod:p[0].prod,custo:p[0].custo}));
+  },[form.cat]);
+
+  const handleProd=prod=>{
+    const m=CATS_DATA.find(c=>c.prod===prod&&c.cat===form.cat);
+    setForm(f=>({...f,prod,custo:m?m.custo:f.custo}));
+  };
+
+  /* Cents-based value input */
+  const pushDigit=d=>{
+    const next=cents*10+d; if(next>9999999)return;
+    setCents(next);
+    setDispVal(next===0?'':(next/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  };
+  const popDigit=()=>{
+    const next=Math.floor(cents/10); setCents(next);
+    setDispVal(next===0?'':(next/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  };
+  const handleValueKey=e=>{
+    if(e.key==='Backspace'){popDigit();e.preventDefault();return;}
+    if(/^\d$/.test(e.key)){pushDigit(parseInt(e.key,10));e.preventDefault();}
+    else e.preventDefault();
+  };
+  const handleValueChange=e=>{
+    const digits=e.target.value.replace(/\D/g,'');
+    if(!digits){setCents(0);setDispVal('');return;}
+    const next=Math.min(parseInt(digits,10),9999999);
+    setCents(next);
+    setDispVal((next/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  };
+
+  const handleSubmit=()=>{
+    if(cents<=0){showToast('⚠ Informe um valor válido');return;}
+    const tx={id:Date.now()+Math.random(),type,value:cents/100,conta:form.conta,
+      cat:type==='income'?'Entrada':form.cat,
+      prod:type==='income'?(form.srcIncome||'Receita'):form.prod,
+      custo:type==='income'?'—':form.custo,
+      date:form.date,detalhe:form.detalhe};
+    const next=[tx,...txs]; setTxs(next); saveTx(next);
+    setCents(0); setDispVal('');
+    setForm(f=>({...f,detalhe:'',srcIncome:''}));
+    showToast(type==='income'?'✓ Entrada registrada!':'✓ Despesa registrada!');
+  };
+
+  const delTx=id=>{const n=txs.filter(t=>t.id!==id);setTxs(n);saveTx(n);showToast('Transação removida.');};
+
+  const monthOpts=()=>{
+    const s=new Set(txs.map(t=>getMK(t.date))); s.add(curMK());
+    return [...s].sort().reverse();
+  };
+
+  const filtered=txs.filter(t=>getMK(t.date)===selMK);
+  const expenses=filtered.filter(t=>t.type==='expense');
+  const incomes =filtered.filter(t=>t.type==='income');
+  const totalExp=expenses.reduce((s,t)=>s+t.value,0);
+  const totalInc=incomes.reduce((s,t)=>s+t.value,0);
+  const saving=totalInc>0?Math.max(0,((totalInc-totalExp)/totalInc)*100):0;
+  const balances=calcBal(filtered);
+  const fixoTotal=expenses.filter(t=>t.custo==='Custo Fixo').reduce((s,t)=>s+t.value,0);
+  const varTotal =expenses.filter(t=>t.custo==='Custo Variável').reduce((s,t)=>s+t.value,0);
+
+  /* Category donut data */
+  const catMap={}; expenses.forEach(t=>{catMap[t.cat]=(catMap[t.cat]||0)+t.value;});
+  const DONUT_COLORS=['#D8E63C','#D6B4FC','#17184B','#273287','#D3DDE7','#F0EEE9','#b5c400','#9B59F5'];
+  const donutData=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([l,v],i)=>({l,v,c:DONUT_COLORS[i%DONUT_COLORS.length]}));
+
+  /* Bar chart: last 5 months */
+  const barMonths=monthOpts().slice(0,5).reverse();
+  const barInc=barMonths.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='income').reduce((s,t)=>s+t.value,0));
+  const barExp=barMonths.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='expense').reduce((s,t)=>s+t.value,0));
+  const barLbls=barMonths.map(mk=>{ const [,m]=mk.split('-'); return MONTHS[parseInt(m)-1].slice(0,3); });
+
+  const prodsFilt=CATS_DATA.filter(c=>c.cat===form.cat);
+  const savingColor=saving>=20?'#1A7F5A':saving>=10?'#B45309':'#C0392B';
+
+  const exportBk=()=>{
+    const b=new Blob([JSON.stringify(txs,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+    a.download=`gestao2026_${new Date().toISOString().slice(0,10)}.json`; a.click();
+    showToast('Backup exportado!');
+  };
+  const importBk=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){setTxs(d);saveTx(d);showToast(`${d.length} transações importadas!`);}}catch{showToast('Arquivo inválido!');}};
+    r.readAsText(f); e.target.value='';
+  };
+
+  const navItems=[
+    {id:'dashboard',label:'Início',   icon:'🏠'},
+    {id:'lancamento',label:'Lançar',  icon:'➕'},
+    {id:'extrato',   label:'Extrato', icon:'📋'},
+  ];
+
+  /* Account cards config */
+  const ACARDS=[
+    {id:'dinheiro',label:'Dinheiro / Pix',  icon:'💵',cls:'yellow-card'},
+    {id:'va',      label:'Vale Alimentação', icon:'🍱',cls:''},
+    {id:'cultura', label:'Vale Cultura',     icon:'🎭',cls:'violet-card'},
+    {id:'poupanca',label:'Poupança',         icon:'🏦',cls:''},
+  ];
+
+  return (
+    <div className="shell">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="s-logo">
+          <h1>Gestão <em>2026</em></h1>
+          <p>controle financeiro pessoal</p>
+        </div>
+        <nav className="snav">
+          {navItems.map(n=>(
+            <div key={n.id} className={`snav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
+              <span className="si">{n.icon}</span>{n.label}
+            </div>
+          ))}
+        </nav>
+        <div className="s-bottom">
+          <button className="btn-bk" onClick={exportBk}>💾 Exportar Backup</button>
+          <label className="import-lbl" htmlFor="imp-d">📥 Importar Backup</label>
+          <input type="file" id="imp-d" accept=".json" onChange={importBk}/>
+        </div>
+      </aside>
+
+      {/* TOP BAR mobile */}
+      <div className="top-bar">
+        <div className="top-logo">Gestão <em>2026</em></div>
+        <div className="top-actions">
+          <button className="top-btn" onClick={exportBk}>💾 Backup</button>
+          <label className="top-btn" htmlFor="imp-m" style={{cursor:'pointer'}}>📥 Import</label>
+          <input type="file" id="imp-m" accept=".json" onChange={importBk}/>
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <main className="main">
+
+        {/* ── DASHBOARD ── */}
+        {page==='dashboard' && <>
+          <div className="ph">
+            <div>
+              <div className="ph-title">Dashboard</div>
+              <div className="ph-sub">{mkLbl(selMK)}</div>
+            </div>
+            <select className="mpill" value={selMK} onChange={e=>setSelMK(e.target.value)}>
+              {monthOpts().map(mk=><option key={mk} value={mk}>{mkLbl(mk)}</option>)}
+            </select>
+          </div>
+
+          {/* Hero */}
+          <div className="hero">
+            <div className="hero-lbl">Saldo do Mês</div>
+            <div className="hero-val">{fmt(totalInc-totalExp)}</div>
+            <div className="hero-chips">
+              <div className="hchip in">⬆ {fmt(totalInc)}</div>
+              <div className="hchip out">⬇ {fmt(totalExp)}</div>
+            </div>
+          </div>
+
+          {/* Account cards */}
+          <div className="cards-row">
+            {ACARDS.map(c=>{
+              const inc=incomes.filter(t=>t.conta===c.id).reduce((s,t)=>s+t.value,0);
+              const exp=expenses.filter(t=>t.conta===c.id).reduce((s,t)=>s+t.value,0);
+              const bal=balances[c.id];
+              return (
+                <div key={c.id} className={`acard ${c.cls}`}>
+                  <div className="acard-top">
+                    <div className="acard-icon" style={{background:'rgba(255,255,255,.5)'}}>{c.icon}</div>
+                    <span style={{fontSize:'18px',opacity:.4}}>↗</span>
+                  </div>
+                  <div className="acard-lbl">{c.label}</div>
+                  <div className="acard-val" style={c.cls===''&&bal<0?{color:'var(--negative)'}:{}}>{fmt(bal)}</div>
+                  <div className="acard-meta">
+                    <span className="m-in">↑{fmtS(inc)}</span>
+                    <span className="m-out">↓{fmtS(exp)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Charts */}
+          <div className="dash-charts">
+
+            {/* Bar Chart — Entradas vs Saídas */}
+            <div className="chart-card">
+              <div className="cc-hd">
+                <div className="cc-title">Histórico</div>
+                <div className="cc-pill" style={{display:'flex',gap:'10px',alignItems:'center'}}>
+                  <span style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',fontWeight:600}}>
+                    <span style={{width:10,height:10,borderRadius:3,background:'#D8E63C',display:'inline-block'}}/>Entradas
+                  </span>
+                  <span style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',fontWeight:600}}>
+                    <span style={{width:10,height:10,borderRadius:3,background:'#D6B4FC',display:'inline-block'}}/>Saídas
+                  </span>
+                </div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-item">
+                  <div className="stat-lbl">Entradas</div>
+                  <div className="stat-val" style={{color:'var(--blue-dk)'}}>{fmt(totalInc)}</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-lbl">Saídas</div>
+                  <div className="stat-val" style={{color:'var(--violet-dk)'}}>{fmt(totalExp)}</div>
+                </div>
+              </div>
+              <BarChart months={barLbls} income={barInc} spend={barExp}/>
+            </div>
+
+            {/* Category breakdown */}
+            <div className="chart-card">
+              <div className="cc-hd">
+                <div className="cc-title">Categorias</div>
+                <div className="cc-pill">{mkLbl(selMK)}</div>
+              </div>
+              {donutData.length>0 ? <>
+                {/* Bubble clusters */}
+                <div className="bubble-wrap">
+                  {donutData.slice(0,3).map((d,i)=>{
+                    const sizes=[110,78,58];
+                    const fontSize=[22,16,13];
+                    const bgs=['#D8E63C','#D6B4FC','#D3DDE7'];
+                    return (
+                      <div key={d.l} className="bubble" style={{
+                        width:sizes[i],height:sizes[i],
+                        background:bgs[i],
+                        color:i===0?'var(--blue-dk)':'var(--blue-dk)',
+                        marginLeft:i>0?'-14px':'0',
+                        zIndex:3-i,
+                        boxShadow:'0 2px 12px rgba(0,0,0,.08)',
+                      }}>
+                        <div className="b-val" style={{fontSize:fontSize[i]}}>{catIcon(d.l)}</div>
+                        <div className="b-lbl" style={{fontSize:i===0?10:8}}>{d.l}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Progress bars */}
+                <div className="prog-list">
+                  {donutData.slice(0,4).map((d,i)=>{
+                    const fills=['#D8E63C','#D6B4FC','#17184B','#D3DDE7'];
+                    const pct=totalExp>0?Math.round(d.v/totalExp*100):0;
+                    return (
+                      <div key={d.l} className="prog-item">
+                        <div className="prog-hd">
+                          <span className="prog-lbl">{catIcon(d.l)} {d.l}</span>
+                          <span className="prog-pct">{pct}%</span>
+                        </div>
+                        <div className="prog-bar"><div className="prog-fill" style={{width:`${pct}%`,background:fills[i%fills.length]}}/></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </> : <div className="empty">Sem despesas registradas.</div>}
+            </div>
+
+            {/* Saving rate card */}
+            <div className="chart-card">
+              <div className="cc-hd">
+                <div className="cc-title">Taxa de Economia</div>
+                <div className="cc-pill">Mês</div>
+              </div>
+              <div className="rate-num" style={{color:savingColor}}>{saving.toFixed(0)}%</div>
+              <div style={{fontSize:'12px',color:'var(--text3)',marginBottom:'4px'}}>das entradas foram economizadas</div>
+              <div className="rate-bar"><div className="rate-fill" style={{width:`${Math.min(saving,100)}%`,background:saving>=20?'#D8E63C':saving>=10?'#D6B4FC':'#f87171'}}/></div>
+
+              {/* Fixo vs Variável bubbles */}
+              <div style={{marginTop:'16px',display:'flex',gap:'8px'}}>
+                <div style={{flex:1,background:'#FFF8E1',borderRadius:14,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:'11px',color:'#B45309',fontWeight:600,marginBottom:'4px'}}>🔒 Fixo</div>
+                  <div style={{fontSize:'18px',fontWeight:700,color:'#B45309',letterSpacing:'-.5px'}}>{fmt(fixoTotal)}</div>
+                  <div style={{fontSize:'10px',color:'#B45309',marginTop:'2px'}}>{totalExp>0?Math.round(fixoTotal/totalExp*100):0}% do total</div>
+                </div>
+                <div style={{flex:1,background:'var(--violet-lt)',borderRadius:14,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:'11px',color:'var(--violet-dk)',fontWeight:600,marginBottom:'4px'}}>🌊 Variável</div>
+                  <div style={{fontSize:'18px',fontWeight:700,color:'var(--violet-dk)',letterSpacing:'-.5px'}}>{fmt(varTotal)}</div>
+                  <div style={{fontSize:'10px',color:'var(--violet-dk)',marginTop:'2px'}}>{totalExp>0?Math.round(varTotal/totalExp*100):0}% do total</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Recent */}
+          <div className="table-card">
+            <div className="table-hd">
+              <div className="table-title">Lançamentos Recentes</div>
+              <div className="tcount">{filtered.length}</div>
+            </div>
+            {filtered.length===0 ? <div className="empty">Nenhum lançamento em {mkLbl(selMK)}.<br/>Use "Lançar" para adicionar.</div> :
+              <div className="tx-list">
+                {filtered.slice(0,10).map(t=>(
+                  <div key={t.id} className="tx-item">
+                    <div className="cat-icon" style={{background:catBg(t.cat)}}>{catIcon(t.cat)}</div>
+                    <div className="tx-body">
+                      <div className="tx-name">{t.prod}</div>
+                      <div className="tx-sub">{t.cat}{t.detalhe?` · ${t.detalhe}`:''}</div>
+                    </div>
+                    <div className="tx-right">
+                      <div className={`tx-amt ${t.type}`}>{t.type==='income'?'+':'-'}{fmt(t.value)}</div>
+                      <div className="tx-dt">{t.date}</div>
+                    </div>
+                    <button className="tx-del" onClick={()=>delTx(t.id)}>🗑</button>
+                  </div>
+                ))}
+              </div>
+            }
+            {filtered.length>10 && (
+              <div style={{padding:'12px 18px',textAlign:'center',fontSize:'12px',color:'var(--text3)'}}>
+                +{filtered.length-10} — <span style={{color:'var(--violet-dk)',fontWeight:600,cursor:'pointer'}} onClick={()=>setPage('extrato')}>ver extrato completo →</span>
+              </div>
+            )}
+          </div>
+        </>}
+
+        {/* ── LANÇAMENTO ── */}
+        {page==='lancamento' && <>
+          <div className="ph">
+            <div>
+              <div className="ph-title">Novo Lançamento</div>
+              <div className="ph-sub">registrar entrada ou despesa</div>
+            </div>
+          </div>
+
+          <div className="form-card">
+            <div className="type-toggle">
+              <button className={`tog-btn expense ${type==='expense'?'active':''}`} onClick={()=>setType('expense')}>
+                ⬇ Despesa
+              </button>
+              <button className={`tog-btn income ${type==='income'?'active':''}`} onClick={()=>setType('income')}>
+                ⬆ Receita
+              </button>
+            </div>
+
+            <div className="form-stack">
+              <div className="fg">
+                <div className="flbl">Valor (R$)</div>
+                <input
+                  className="fi value-fi"
+                  type="text" inputMode="numeric"
+                  placeholder="0,00"
+                  value={dispVal}
+                  onKeyDown={handleValueKey}
+                  onChange={handleValueChange}
+                  style={{color:type==='income'?'var(--positive)':'var(--negative)'}}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="fg">
+                  <div className="flbl">Conta</div>
+                  <select className="fs" value={form.conta} onChange={e=>setForm(f=>({...f,conta:e.target.value}))}>
+                    {Object.entries(CONTA_META).map(([id,m])=><option key={id} value={id}>{m.icon} {m.label}</option>)}
+                  </select>
+                </div>
+                <div className="fg">
+                  <div className="flbl">Data</div>
+                  <input className="fi" type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}/>
+                </div>
+              </div>
+
+              {type==='expense' ? <>
+                <div className="form-row">
+                  <div className="fg">
+                    <div className="flbl">Categoria</div>
+                    <select className="fs" value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))}>
+                      {CATS.map(c=><option key={c} value={c}>{catIcon(c)} {c}</option>)}
+                    </select>
+                  </div>
+                  <div className="fg">
+                    <div className="flbl">Produto</div>
+                    <select className="fs" value={form.prod} onChange={e=>handleProd(e.target.value)}>
+                      {prodsFilt.map(p=><option key={p.prod} value={p.prod}>{p.prod}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="fg">
+                  <div className="flbl">Tag de Custo</div>
+                  <select className="fs" value={form.custo} onChange={e=>setForm(f=>({...f,custo:e.target.value}))}>
+                    <option value="Custo Fixo">🔒 Custo Fixo</option>
+                    <option value="Custo Variável">🌊 Custo Variável</option>
+                  </select>
+                </div>
+              </> : (
+                <div className="fg">
+                  <div className="flbl">Origem da Receita</div>
+                  <input className="fi" type="text" placeholder="Ex: Salário, Freela, Caju..." value={form.srcIncome} onChange={e=>setForm(f=>({...f,srcIncome:e.target.value}))}/>
+                </div>
+              )}
+
+              <div className="fg">
+                <div className="flbl">Detalhe (opcional)</div>
+                <input className="fi" type="text" placeholder="Descrição livre..." value={form.detalhe} onChange={e=>setForm(f=>({...f,detalhe:e.target.value}))}/>
+              </div>
+
+              <button className={`btn-sub ${type==='income'?'income-mode':''}`} onClick={handleSubmit}>
+                ✓ Registrar {type==='income'?'Receita':'Despesa'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{fontSize:'13px',fontWeight:600,color:'var(--text2)',marginBottom:'8px'}}>Saldos atuais (acumulado)</div>
+          <div className="quick-bals">
+            {Object.entries(CONTA_META).map(([id,m])=>{
+              const bal=calcBal(txs)[id];
+              return (
+                <div key={id} className="qbal">
+                  <div className="qbal-lbl">{m.icon} {m.label}</div>
+                  <div className={`qbal-val ${bal>=0?'pos':'neg'}`}>{fmt(bal)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>}
+
+        {/* ── EXTRATO ── */}
+        {page==='extrato' && <>
+          <div className="ph">
+            <div>
+              <div className="ph-title">Extrato</div>
+              <div className="ph-sub">todos os lançamentos</div>
+            </div>
+            <select className="mpill" value={selMK} onChange={e=>setSelMK(e.target.value)}>
+              {monthOpts().map(mk=><option key={mk} value={mk}>{mkLbl(mk)}</option>)}
+            </select>
+          </div>
+
+          <div className="table-card">
+            <div className="table-hd">
+              <div className="table-title">{mkLbl(selMK)}</div>
+              <div className="tcount">{filtered.length} lançamentos</div>
+            </div>
+            {filtered.length===0 ? <div className="empty">Nenhuma transação neste mês.</div> :
+              <div className="tx-list">
+                {filtered.map(t=>{
+                  const contaM=CONTA_META[t.conta]||{icon:'💳',label:t.conta};
+                  return (
+                    <div key={t.id} className="tx-item">
+                      {/* Category icon */}
+                      <div className="cat-icon" style={{background:catBg(t.cat)}}>{catIcon(t.cat)}</div>
+                      <div className="tx-body">
+                        <div className="tx-name">{t.prod}</div>
+                        <div className="tx-sub">
+                          <span className="tag" style={{background:catBg(t.cat),color:'var(--text2)'}}>{catIcon(t.cat)} {t.cat}</span>
+                          {t.custo!=='—' && <span className={`tag ${t.custo==='Custo Fixo'?'tag-fixo':'tag-var'}`}>{t.custo==='Custo Fixo'?'🔒 Fixo':'🌊 Var'}</span>}
+                          <span className={`tag tag-${t.conta}`}>{contaM.icon} {contaM.label}</span>
+                        </div>
+                        {t.detalhe && <div style={{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}}>💬 {t.detalhe}</div>}
+                      </div>
+                      <div className="tx-right">
+                        <div className={`tx-amt ${t.type}`}>{t.type==='income'?'+':'-'}{fmt(t.value)}</div>
+                        <div className="tx-dt">{t.date}</div>
+                      </div>
+                      <button className="tx-del" onClick={()=>delTx(t.id)}>🗑</button>
+                    </div>
+                  );
+                })}
+              </div>
+            }
+            {filtered.length>0 && (
+              <div className="table-footer">
+                <span className="tf-item">⬆ <strong style={{color:'var(--positive)'}}>{fmt(totalInc)}</strong></span>
+                <span className="tf-item">⬇ <strong style={{color:'var(--negative)'}}>{fmt(totalExp)}</strong></span>
+                <span className="tf-item">= <strong style={{color:totalInc-totalExp>=0?'var(--positive)':'var(--negative)'}}>{fmt(totalInc-totalExp)}</strong></span>
+              </div>
+            )}
+          </div>
+        </>}
+
+      </main>
+
+      {/* BOTTOM NAV */}
+      <nav className="bottom-nav">
+        {navItems.map(n=>(
+          <div key={n.id} className={`bnav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
+            <div className="bnav-icon">{n.icon}</div>
+            {n.label}
+          </div>
+        ))}
+      </nav>
+
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById('root'));
+</script>
+</body>
+</html>

@@ -270,6 +270,19 @@ canvas{display:block}
 
 .empty{padding:44px 24px;text-align:center;color:var(--text3);font-size:13px;line-height:1.8}
 input[type=file]{display:none}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filter-select{background:rgba(255,255,255,.75);backdrop-filter:var(--blur);border:1.5px solid var(--border2);border-radius:20px;padding:7px 14px;font-family:var(--font);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;appearance:none;outline:none;transition:.15s}
+.filter-select:focus,.filter-select.active{border-color:var(--tang);color:var(--tang);background:var(--tang-lt)}
+.filter-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;align-self:center}
+.filter-clear{background:none;border:none;font-family:var(--font);font-size:11px;font-weight:600;color:var(--tang);cursor:pointer;padding:4px 8px;border-radius:20px;transition:.15s}
+.filter-clear:hover{background:var(--tang-lt)}
+
+/* CREDIT CHART legend */
+.chart-legend-row{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:12px}
+.chart-leg{display:flex;align-items:center;gap:5px}
+.chart-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -440,11 +453,12 @@ const mkLbl= mk => { const[y,m]=mk.split('-'); return `${MONTHS[parseInt(m)-1]} 
 function loadTx(){try{return JSON.parse(localStorage.getItem(LS))||[];}catch{return[];}}
 function saveTx(t){localStorage.setItem(LS,JSON.stringify(t));}
 
-// A transaction is "credit" if conta=credito OR produto=Cartão Crédito (legacy data)
+// isCredit: only conta=credito counts as credit card purchase (not bill payment)
+// "Cartão Crédito" as prod in dinheiro = paying the bill = real money deducted normally
 function isCredit(t){
-  return t.conta==='credito'||t.prod==='Cartão Crédito'||t.prod==='Cartão de Crédito';
+  return t.conta==='credito';
 }
-// Only real accounts affect balance — credit expenses never deducted
+// Only real accounts affect balance — credit card purchases never deducted
 function calcBal(txs){
   const b={dinheiro:0,va:0,cultura:0,poupanca:0};
   txs.forEach(t=>{
@@ -453,7 +467,7 @@ function calcBal(txs){
   });
   return b;
 }
-// Credit total: conta=credito OR legacy prod=Cartão Crédito
+// Credit total: only conta=credito expenses
 function calcCredit(txs){
   return txs.filter(t=>t.type==='expense'&&isCredit(t)).reduce((s,t)=>s+t.value,0);
 }
@@ -474,6 +488,16 @@ let cents = 0;
 let dispVal = '';
 let formState = {conta:'dinheiro',cat:'Alimentação',prod:'Supermercado',custo:'Custo Variável',date:now.toISOString().slice(0,10),detalhe:'',srcIncome:''};
 let currentPage = 'dashboard';
+// Extrato filters
+let filterCat = 'todas';
+let filterConta = 'todas';
+
+// Next month label for credit banner
+function nextMonthLbl(mk){
+  const [y,m] = mk.split('-').map(Number);
+  const d = new Date(y, m, 1); // m is already 1-based, so m = next month index
+  return MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
 
 /* ═══════════ NAVIGATION ═══════════ */
 function navigate(page){
@@ -657,17 +681,19 @@ function roundRect(ctx,x,y,w,h,r){
   if(h<1)return; if(h<r)r=h;
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
 }
-function drawBar(id,labels,inc,exp){
+function drawBar(id,labels,inc,exp,cred){
   const canvas=document.getElementById(id); if(!canvas)return;
-  const W=canvas.parentElement.offsetWidth||320; const H=160;
+  const W=canvas.parentElement.offsetWidth||320; const H=170;
   canvas.width=W*2; canvas.height=H*2; canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d'); ctx.scale(2,2);
   ctx.clearRect(0,0,W,H);
-  const all=[...inc,...exp].filter(v=>v>0);
+  const cr=cred||[];
+  const all=[...inc,...exp,...cr].filter(v=>v>0);
   const maxV=all.length?Math.max(...all)*1.2:100;
   const pad={t:8,r:8,b:28,l:48};
   const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
-  const n=labels.length||1; const gW=cW/n; const bW=Math.min(gW*.28,16); const gap=bW*.5;
+  const n=labels.length||1; const gW=cW/n;
+  const bW=Math.min(gW*.22,12); const gap=2;
   ctx.strokeStyle='rgba(162,194,190,.2)'; ctx.lineWidth=1;
   ctx.fillStyle='#A0A0A0'; ctx.font='9px system-ui'; ctx.textAlign='right';
   for(let i=0;i<=4;i++){
@@ -677,10 +703,15 @@ function drawBar(id,labels,inc,exp){
   }
   labels.forEach((lbl,i)=>{
     const cx=pad.l+gW*(i+.5);
+    // 3 bars: income (green), expense (orange), credit (amber)
+    const totalBarW = bW*3 + gap*2;
+    const startX = cx - totalBarW/2;
     const ih=Math.max(0,(inc[i]||0)/maxV*cH);
-    ctx.fillStyle='#2D9E6B'; roundRect(ctx,cx-bW-gap/2,pad.t+cH-ih,bW,ih,4); ctx.fill();
+    ctx.fillStyle='#2D9E6B'; roundRect(ctx,startX,pad.t+cH-ih,bW,ih,3); ctx.fill();
     const eh=Math.max(0,(exp[i]||0)/maxV*cH);
-    ctx.fillStyle='#EB4600'; roundRect(ctx,cx+gap/2,pad.t+cH-eh,bW,eh,4); ctx.fill();
+    ctx.fillStyle='#EB4600'; roundRect(ctx,startX+bW+gap,pad.t+cH-eh,bW,eh,3); ctx.fill();
+    const ch=Math.max(0,(cr[i]||0)/maxV*cH);
+    ctx.fillStyle='#fbbf24'; roundRect(ctx,startX+bW*2+gap*2,pad.t+cH-ch,bW,ch,3); ctx.fill();
     ctx.fillStyle='#A0A0A0'; ctx.font='9px system-ui'; ctx.textAlign='center';
     ctx.fillText(lbl,cx,H-8);
   });
@@ -743,6 +774,7 @@ function render(){
   const barLbls=barMKs.map(mk=>{const[,m]=mk.split('-');return MONTHS[parseInt(m)-1].slice(0,3);});
   const barInc=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='income').reduce((s,t)=>s+t.value,0));
   const barExp=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='expense'&&!isCredit(t)).reduce((s,t)=>s+t.value,0));
+  const barCredit=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='expense'&&isCredit(t)).reduce((s,t)=>s+t.value,0));
   const sc=saving>=20?'var(--pos)':saving>=10?'#B45309':'var(--neg)';
   const prodsFilt=CATS_DATA.filter(c=>c.cat===formState.cat);
 
@@ -761,15 +793,6 @@ function render(){
       <div class="ph">
         <div><div class="ph-title">Dashboard</div><div class="ph-sub">${mkLbl(selMK)}</div></div>
         ${monthSel}
-      </div>
-
-      <div class="hero">
-        <div class="hero-lbl">Saldo do Mês</div>
-        <div class="hero-val">${fmt(totalInc-totalExp)}</div>
-        <div class="hero-chips">
-          <span class="hchip in">${icoSvg('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',13)} ${fmt(totalInc)}</span>
-          <span class="hchip out">${icoSvg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',13)} ${fmt(totalExp)}</span>
-        </div>
       </div>
 
       <div class="cards-row">
@@ -796,7 +819,7 @@ function render(){
       <!-- CREDIT BANNER -->
       <div class="credit-banner">
         <div>
-          <div class="credit-lbl">${icoSvg('<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/>',14)} Fatura do Cartão · ${mkLbl(selMK)}</div>
+          <div class="credit-lbl">${icoSvg('<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/>',14)} Fatura do Cartão · ${nextMonthLbl(selMK)}</div>
           <div class="credit-val">${fmt(creditTotal)}</div>
           <div class="credit-sub">não debitado do saldo · pagar no próximo mês</div>
         </div>
@@ -811,14 +834,16 @@ function render(){
         <div class="chart-card glass">
           <div class="cc-hd">
             <div class="cc-title">Histórico</div>
-            <div style="display:flex;gap:12px;align-items:center;font-size:11px;font-weight:600;color:var(--text2)">
-              <span><span class="leg-dot" style="background:var(--pos)"></span>Entradas</span>
-              <span><span class="leg-dot" style="background:var(--tang)"></span>Saídas</span>
+            <div class="chart-legend-row">
+              <span class="chart-leg"><span class="chart-leg-dot" style="background:var(--pos)"></span>Entradas</span>
+              <span class="chart-leg"><span class="chart-leg-dot" style="background:var(--tang)"></span>Saídas</span>
+              <span class="chart-leg"><span class="chart-leg-dot" style="background:#fbbf24"></span>Crédito</span>
             </div>
           </div>
           <div class="stat-row">
             <div><div class="stat-lbl">Entradas</div><div class="stat-val" style="color:var(--pos)">${fmt(totalInc)}</div></div>
             <div><div class="stat-lbl">Saídas</div><div class="stat-val" style="color:var(--tang)">${fmt(totalExp)}</div></div>
+            <div><div class="stat-lbl">Crédito</div><div class="stat-val" style="color:#b45309">${fmt(creditTotal)}</div></div>
           </div>
           <div style="width:100%"><canvas id="bar-chart"></canvas></div>
         </div>
@@ -883,7 +908,7 @@ function render(){
         ${filtered.length>10?`<div style="padding:12px 18px;text-align:center;font-size:12px;color:var(--text3)">+${filtered.length-10} — <span style="color:var(--tang);font-weight:600;cursor:pointer" onclick="navigate('extrato')">ver extrato completo →</span></div>`:''}
       </div>
     `;
-    requestAnimationFrame(()=>drawBar('bar-chart',barLbls,barInc,barExp));
+    requestAnimationFrame(()=>drawBar('bar-chart',barLbls,barInc,barExp,barCredit));
   }
 
   /* ── LANÇAMENTO ── */
@@ -976,27 +1001,51 @@ function render(){
 
   /* ── EXTRATO ── */
   else if(currentPage==='extrato'){
-    // all filtered already sorted newest first
-    const expAmt=filtered.filter(t=>t.type==='expense'&&!isCredit(t)).reduce((s,t)=>s+t.value,0);
+    // Apply filters
+    const availCats=['todas',...new Set(filtered.filter(t=>t.type==='expense').map(t=>t.cat))].filter(Boolean);
+    const availContas=['todas',...new Set(filtered.map(t=>t.conta))];
+    let extFiltered=filtered;
+    if(filterCat!=='todas') extFiltered=extFiltered.filter(t=>t.cat===filterCat);
+    if(filterConta!=='todas') extFiltered=extFiltered.filter(t=>t.conta===filterConta);
+    const expAmt=extFiltered.filter(t=>t.type==='expense'&&!isCredit(t)).reduce((s,t)=>s+t.value,0);
+    const incAmt=extFiltered.filter(t=>t.type==='income').reduce((s,t)=>s+t.value,0);
+    const credAmt=extFiltered.filter(t=>t.type==='expense'&&isCredit(t)).reduce((s,t)=>s+t.value,0);
+    const hasFilters=filterCat!=='todas'||filterConta!=='todas';
     main.innerHTML=`
       <div class="ph">
         <div><div class="ph-title">Extrato</div><div class="ph-sub">mais novo primeiro</div></div>
         ${monthSel}
       </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <span class="filter-label">Filtrar:</span>
+        <select class="filter-select ${filterCat!=='todas'?'active':''}" onchange="filterCat=this.value;render()">
+          ${availCats.map(c=>`<option value="${c}"${filterCat===c?' selected':''}>${c==='todas'?'Todas categorias':c}</option>`).join('')}
+        </select>
+        <select class="filter-select ${filterConta!=='todas'?'active':''}" onchange="filterConta=this.value;render()">
+          ${availContas.map(c=>`<option value="${c}"${filterConta===c?' selected':''}>${c==='todas'?'Todas as contas':(CONTA_META[c]?.label||c)}</option>`).join('')}
+        </select>
+        ${hasFilters?`<button class="filter-clear" onclick="filterCat='todas';filterConta='todas';render()">✕ Limpar filtros</button>`:''}
+      </div>
+
       <div class="table-card glass">
         <div class="table-hd">
-          <div class="table-title">${mkLbl(selMK)}</div>
+          <div class="table-title">${mkLbl(selMK)}${hasFilters?' · filtrado':''}</div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="sort-pill">${icoSvg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',12)} Mais novo</span>
-            <span class="tcount">${filtered.length}</span>
+            <span class="tcount">${extFiltered.length}</span>
           </div>
         </div>
-        ${filtered.length===0?'<div class="empty">Nenhuma transação neste mês.</div>':txListHTML(filtered,true)}
-        ${filtered.length>0?`<div class="table-footer">
-          <span>${icoSvg('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',12)} <strong style="color:var(--pos)">${fmt(totalInc)}</strong></span>
-          <span>${icoSvg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',12)} <strong style="color:var(--neg)">${fmt(expAmt)}</strong></span>
-          ${creditTotal>0?`<span>${icoSvg('<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',12)} <strong style="color:#b45309">${fmt(creditTotal)}</strong> crédito</span>`:''}
-          <span>= <strong style="color:${totalInc-expAmt>=0?'var(--pos)':'var(--neg)'}">${fmt(totalInc-expAmt)}</strong></span>
+        ${extFiltered.length===0
+          ?'<div class="empty">Nenhuma transação encontrada.<br>Tente ajustar os filtros.</div>'
+          :txListHTML(extFiltered,true)
+        }
+        ${extFiltered.length>0?`<div class="table-footer">
+          ${incAmt>0?`<span>${icoSvg('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',12)} <strong style="color:var(--pos)">${fmt(incAmt)}</strong></span>`:''}
+          ${expAmt>0?`<span>${icoSvg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',12)} <strong style="color:var(--neg)">${fmt(expAmt)}</strong></span>`:''}
+          ${credAmt>0?`<span>${icoSvg('<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',12)} <strong style="color:#b45309">${fmt(credAmt)}</strong> crédito</span>`:''}
+          <span>= <strong style="color:${incAmt-expAmt>=0?'var(--pos)':'var(--neg)'}">${fmt(incAmt-expAmt)}</strong></span>
         </div>`:''}
       </div>
     `;

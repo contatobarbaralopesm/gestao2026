@@ -243,6 +243,18 @@ body::before{
 .acard-ash .m-in,.acard-ash .m-out{color:rgba(255,255,255,.9)}
 .acard-powder{background:linear-gradient(135deg,#FFFFEB,#F5F0D0);border:1px solid rgba(235,70,0,.15);box-shadow:0 4px 16px rgba(0,0,0,.06)}
 .acard-plain{background:var(--surface);backdrop-filter:var(--blur);border:1px solid var(--border2);box-shadow:var(--shadow-sm)}
+.acard-credit{background:linear-gradient(135deg,#1C1C1C,#3a3a3a);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.acard-credit .acard-lbl{color:rgba(255,255,255,.5)}
+.acard-credit .acard-val{color:#fff}
+.acard-credit .acard-meta{color:rgba(255,255,255,.5)}
+.acard-credit .m-out{color:#fbbf24;font-weight:700}
+.credit-card-full{grid-column:1/-1;background:linear-gradient(135deg,#1C1C1C,#3a3a3a);border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.credit-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.credit-val{font-size:26px;font-weight:700;letter-spacing:-1px;color:#fbbf24}
+.credit-info{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
+.credit-right{text-align:right}
+.credit-badge{background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.tag-credito{background:#1C1C1C;color:#fbbf24}
 
 /* ── CHARTS ── */
 .dash-charts{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
@@ -710,6 +722,7 @@ const CONTA_META = {
   va:      {svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',label:'Vale Alimentação',tagCls:'tag-va'},
   cultura: {svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>',label:'Vale Cultura',tagCls:'tag-cultura'},
   poupanca:{svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',label:'Poupança',tagCls:'tag-poupanca'},
+  credito: {svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>',label:'Cartão de Crédito',tagCls:'tag-credito'},
 };
 
 const CATS_DATA = [
@@ -753,6 +766,10 @@ const now  = new Date();
 const curMK= ()=>`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 const getMK= d=>{const dt=new Date(d+'T12:00:00');return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;};
 const mkLbl= mk=>{const[y,m]=mk.split('-');return `${MONTHS[parseInt(m)-1]} ${y}`;};
+function calcCredit(txs){
+  // Returns total credit expenses (not deducted from balances)
+  return txs.filter(t=>t.conta==='credito'&&t.type==='expense').reduce((s,t)=>s+t.value,0);
+}
 function loadTx(){try{return JSON.parse(localStorage.getItem(LS))||[];}catch{return[];}}
 function saveTx(t){localStorage.setItem(LS,JSON.stringify(t));}
 function calcBal(txs){
@@ -1011,6 +1028,8 @@ function render(){
   const saving=totalInc>0?Math.max(0,((totalInc-totalExp)/totalInc)*100):0;
   const balances=calcBal(filtered);
   const allBals=calcBal(txs);
+  const creditTotal=filtered.filter(t=>t.conta==='credito'&&t.type==='expense').reduce((s,t)=>s+t.value,0);
+  const creditAllTime=txs.filter(t=>t.conta==='credito'&&t.type==='expense'&&getMK(t.date)===selMK).reduce((s,t)=>s+t.value,0);
   const fixoTotal=expenses.filter(t=>t.custo==='Custo Fixo').reduce((s,t)=>s+t.value,0);
   const varTotal =expenses.filter(t=>t.custo==='Custo Variável').reduce((s,t)=>s+t.value,0);
   const catMap={};expenses.forEach(t=>{catMap[t.cat]=(catMap[t.cat]||0)+t.value;});
@@ -1070,6 +1089,27 @@ function render(){
             </div>
           </div>`;
         }).join('')}
+      </div>
+
+      <!-- CREDIT CARD BANNER -->
+      <div class="credit-card-full" style="margin-bottom:14px">
+        <div>
+          <div class="credit-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+            Fatura do Cartão de Crédito
+          </div>
+          <div class="credit-val">${fmt(creditTotal)}</div>
+          <div class="credit-info">Gastos no crédito em ${mkLbl(selMK)} · não debitado do saldo</div>
+        </div>
+        <div class="credit-right">
+          <div class="credit-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Pagar no próximo mês
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:8px;text-align:right">
+            ${filtered.filter(t=>t.conta==='credito'&&t.type==='expense').length} lançamentos
+          </div>
+        </div>
       </div>
 
       <div class="dash-charts">
@@ -1251,7 +1291,7 @@ function render(){
 
       <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Saldos Acumulados</div>
       <div class="quick-bals">
-        ${Object.entries(CONTA_META).map(([id,m])=>{
+        ${Object.entries(CONTA_META).filter(([id])=>id!=='credito').map(([id,m])=>{
           const bal=allBals[id];
           return`<div class="qbal glass">
             <div class="qbal-lbl">
@@ -1261,6 +1301,25 @@ function render(){
             <div class="qbal-val ${bal>=0?'pos':'neg'}">${fmt(bal)}</div>
           </div>`;
         }).join('')}
+      </div>
+      <!-- Credit fatura summary -->
+      <div style="margin-top:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Fatura do Crédito</div>
+        <div style="background:#1C1C1C;border-radius:var(--r-sm);padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(251,191,36,.15);display:flex;align-items:center;justify-content:center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cartão de Crédito · ${mkLbl(selMK)}</div>
+              <div style="font-size:18px;font-weight:700;color:#fbbf24;letter-spacing:-.5px">${fmt(calcCredit(txs.filter(t=>getMK(t.date)===selMK)))}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:rgba(255,255,255,.3)">${txs.filter(t=>t.conta==='credito'&&t.type==='expense'&&getMK(t.date)===selMK).length} lançamentos</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px">não debita saldo</div>
+          </div>
+        </div>
       </div>
     `;
   }

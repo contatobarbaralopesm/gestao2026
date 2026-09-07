@@ -861,9 +861,21 @@ async function confirmReset(){
 const LS_BK='gestao_lastbk';
 function closeBkModal(){document.getElementById('bk-overlay').classList.remove('open');localStorage.setItem(LS_BK,new Date().toISOString());}
 function checkReminder(){
-  const last=localStorage.getItem(LS_BK);
-  const days=last?Math.floor((Date.now()-new Date(last).getTime())/864e5):999;
-  if(days>=7&&txs.length>0){document.getElementById('bk-days-txt').textContent=days===1?'1 dia':`${days} dias`;document.getElementById('bk-overlay').classList.add('open');}
+  if(txs.length===0) return; // no data, no reminder
+  // Find the most recent transaction date
+  const dates=txs.map(t=>new Date(t.date+'T12:00:00')).filter(d=>!isNaN(d));
+  if(!dates.length) return;
+  const lastTxDate=new Date(Math.max(...dates));
+  const daysSinceTx=Math.floor((Date.now()-lastTxDate.getTime())/864e5);
+  // Also check if user explicitly dismissed recently
+  const dismissed=localStorage.getItem(LS_BK);
+  const daysSinceDismiss=dismissed?Math.floor((Date.now()-new Date(dismissed).getTime())/864e5):999;
+  // Show if last tx was 7+ days ago AND not dismissed in last 3 days
+  if(daysSinceTx>=7&&daysSinceDismiss>=3){
+    const lbl=daysSinceTx===1?'1 dia':`${daysSinceTx} dias`;
+    document.getElementById('bk-days-txt').textContent=lbl;
+    document.getElementById('bk-overlay').classList.add('open');
+  }
 }
 
 /* ═══ PUSH ═══ */
@@ -1015,9 +1027,15 @@ function calcScore(inc,exp,reserva){
   if(taxa>=20)pts+=2;else if(taxa>=10)pts+=1;
   if(metaOk)pts+=2;else if(reserva>0)pts+=1;
   if(fixosPct<50)pts+=1;
-  if(pts>=4)return{cls:'green',label:'Saúde Boa',desc:`Economia ${taxa.toFixed(0)}% · Meta ${metaOk?'atingida':'em progresso'}`,sc:'var(--pos)'};
-  if(pts>=2)return{cls:'yellow',label:'Atenção',desc:`Economia ${taxa.toFixed(0)}% · ${!metaOk?'Meta em andamento':''}`,sc:'var(--warn)'};
-  return{cls:'red',label:'Cuidado',desc:`Economia ${taxa.toFixed(0)}% · Gastos elevados`,sc:'var(--neg)'};
+  const tips=[
+    {ok:taxa>=10,txt:taxa>=20?`Taxa de economia excelente: ${taxa.toFixed(0)}% das entradas guardadas`:taxa>=10?`Taxa de economia ok: ${taxa.toFixed(0)}% — tente chegar a 20%`:`Taxa de economia baixa: ${taxa.toFixed(0)}% — revise os gastos variáveis`},
+    {ok:metaOk,txt:metaOk?`Meta de reserva atingida (${fmt(reserva)} de ${fmt(META_RES)})`:`Meta de reserva em andamento — faltam ${fmt(Math.max(0,META_RES-reserva))}`},
+    {ok:fixosPct<50,txt:fixosPct<50?`Gastos fixos saudáveis: ${fixosPct.toFixed(0)}% da renda`:`Gastos fixos elevados: ${fixosPct.toFixed(0)}% da renda — ideal abaixo de 50%`},
+    {ok:taxa>=0,txt:taxa>=0?`Saldo positivo no mês: ${fmt(inc-exp)}`:`Saldo negativo: ${fmt(inc-exp)} — gastos superaram a renda`},
+  ];
+  if(pts>=4)return{cls:'green',label:'Saúde Boa',desc:'Suas finanças estão equilibradas este mês.',tips,sc:'var(--pos)'};
+  if(pts>=2)return{cls:'yellow',label:'Atenção',desc:'Alguns pontos merecem atenção para melhorar sua saúde financeira.',tips,sc:'var(--warn)'};
+  return{cls:'red',label:'Cuidado',desc:'Seus gastos estão comprometendo sua saúde financeira este mês.',tips,sc:'var(--neg)'};
 }
 
 /* ═══ RENDER ═══ */
@@ -1073,10 +1091,7 @@ function render(){
             ${icoSvg('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',14)}
             Meta de Reserva
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="score-badge ${score.cls}">${score.label}</span>
-            <div class="meta-bar-amt">${fmt(reserva)} / ${fmt(META_RES)}</div>
-          </div>
+          <div class="meta-bar-amt">${fmt(reserva)} / ${fmt(META_RES)}</div>
         </div>
         <div class="meta-bar"><div class="meta-bar-fill" style="width:${Math.min(reserva/META_RES*100,100)}%;background:${reserva>=META_RES?'var(--pos)':'var(--warn)'}"></div></div>
         <div class="meta-bar-note">${reserva>=META_RES?'✓ Meta atingida este mês':'Faltam '+fmt(Math.max(0,META_RES-reserva))+' para a meta mensal'}</div>
@@ -1164,16 +1179,11 @@ function render(){
 
         <div class="rate-card glass">
           <div class="rate-hd">
-            <div>
-              <div class="cc-title">Taxa de Economia</div>
-              <div style="margin-top:5px">
-                <span class="score-badge ${score.cls}">${score.label}</span>
-              </div>
-            </div>
+            <div class="cc-title">Taxa de Economia</div>
             <span class="cc-pill">Mês atual</span>
           </div>
           <div class="rate-num" style="color:${score.sc}">${saving.toFixed(0)}%</div>
-          <div class="rate-sub">${score.desc}</div>
+          <div class="rate-sub" style="color:var(--text3)">das entradas economizadas</div>
           <div class="rate-bar"><div class="rate-fill" style="width:${Math.min(saving,100)}%;background:${score.sc}"></div></div>
           <div class="fv-row">
             <div class="fv-box" style="background:rgba(192,88,32,.08)">
@@ -1187,6 +1197,24 @@ function render(){
               <div class="fv-pct" style="color:var(--storm-dk)">${totalExp>0?Math.round(varTotal/totalExp*100):0}%</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- SCORE CARD -->
+      <div class="glass" style="padding:18px 20px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="score-badge ${score.cls}" style="font-size:12px;padding:5px 13px">${score.label}</span>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Saúde Financeira</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-weight:300">${mkLbl(selMK)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">${score.desc}</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          ${score.tips.map(tip=>`<div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2)">
+            <span style="color:${tip.ok?'var(--pos)':'var(--neg)'};flex-shrink:0;margin-top:1px">${tip.ok?icoSvg('<polyline points="20 6 9 17 4 12"/>',13):icoSvg('<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',13)}</span>
+            <span>${tip.txt}</span>
+          </div>`).join('')}
         </div>
       </div>
 
@@ -1382,7 +1410,7 @@ function render(){
     main.innerHTML=`
       <div class="ph">
         <div><div class="ph-title">Assinaturas</div><div class="ph-sub">cobranças recorrentes</div></div>
-        <button class="btn btn-sm" onclick="showSubForm=!showSubForm;render()">${icoSvg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>',13)} Nova</button>
+        <button class="btn btn-sm" onclick="showSubForm=!showSubForm;render();if(!showSubForm){}else{setTimeout(()=>{const el=document.getElementById('sub-form-anchor');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},80)}">${icoSvg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>',13)} Nova</button>
       </div>
       <div class="table-card glass" style="margin-bottom:14px">
         <div class="table-hd">
@@ -1404,7 +1432,7 @@ function render(){
           </div>
         </div>`).join('')}
         ${ativas.length>0?`<div class="sub-total-bar"><span style="font-size:12px;color:var(--text2);font-weight:400">Total mensal no crédito</span><span style="font-size:16px;font-weight:600;color:var(--warn)">${fmt(totalMensal)}</span></div>`:''}
-        ${showSubForm?`<div class="sub-add-form">
+        ${showSubForm?`<div class="sub-add-form" id="sub-form-anchor">
           <div style="font-size:13px;font-weight:600;margin-bottom:16px;color:var(--text)">Nova Assinatura</div>
           <div class="form-stack">
             <div class="fg">

@@ -602,9 +602,8 @@ const CAT_ICONS={
   'Lazer':       '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
   'Pessoal':     '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   'Saúde':       '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-  'Investimento':'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
+  'Reserva':     '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
   'Viagem':      '<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>',
-  'Trabalho':    '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>',
   'Fatura Cartão':'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
   'Entrada':     '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
 };
@@ -612,8 +611,8 @@ function catSvg(c,sz=20){
   const p=CAT_ICONS[c]||'<circle cx="12" cy="12" r="10"/>';
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 }
-function catBg(c){const m={'Alimentação':'#F5EDE5','Casa':'#E8F0EF','Mobilidade':'#EDE8F5','Lazer':'#F5E8E8','Pessoal':'#F5EFE5','Saúde':'#F5E8E8','Investimento':'#E8F0E8','Viagem':'#E8EFF0','Trabalho':'#EDE8F5','Fatura Cartão':'#F5EDE5','Entrada':'#E8F0E8'};return m[c]||'#F0EBE3';}
-function catCol(c){const m={'Alimentação':'#984216','Casa':'#556870','Mobilidade':'#5A4A80','Lazer':'#803030','Pessoal':'#7A5830','Saúde':'#803030','Investimento':'#6B7560','Viagem':'#556870','Trabalho':'#5A4A80','Fatura Cartão':'#984216','Entrada':'#6B7560'};return m[c]||'#7A6050';}
+function catBg(c){const m={'Alimentação':'#F5EDE5','Casa':'#E8F0EF','Mobilidade':'#EDE8F5','Lazer':'#F5E8E8','Pessoal':'#F5EFE5','Saúde':'#F5E8E8','Reserva':'#E8F0E8','Viagem':'#E8EFF0','Fatura Cartão':'#F5EDE5','Entrada':'#E8F0E8'};return m[c]||'#F0EBE3';}
+function catCol(c){const m={'Alimentação':'#984216','Casa':'#556870','Mobilidade':'#5A4A80','Lazer':'#803030','Pessoal':'#7A5830','Saúde':'#803030','Reserva':'#6B7560','Viagem':'#556870','Fatura Cartão':'#984216','Entrada':'#6B7560'};return m[c]||'#7A6050';}
 
 const CONTA_META={
   debito:  {label:'Débito',            ico:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',tag:'tag-debito'},
@@ -630,6 +629,7 @@ const CATS_DATA=[
   {custo:'Custo Variável',cat:'Alimentação',prod:'Restaurante'},
   {custo:'Custo Fixo',    cat:'Alimentação',prod:'Sacolão'},
   {custo:'Custo Fixo',    cat:'Casa',       prod:'Aluguel'},
+  {custo:'Custo Fixo',    cat:'Casa',       prod:'Condomínio'},
   {custo:'Custo Fixo',    cat:'Casa',       prod:'Internet'},
   {custo:'Custo Fixo',    cat:'Casa',       prod:'Luz (CEMIG)'},
   {custo:'Custo Fixo',    cat:'Casa',       prod:'Gás'},
@@ -644,16 +644,14 @@ const CATS_DATA=[
   {custo:'Custo Fixo',    cat:'Pessoal',    prod:'Assinaturas'},
   {custo:'Custo Variável',cat:'Pessoal',    prod:'Freela'},
   {custo:'Custo Variável',cat:'Pessoal',    prod:'Presentes'},
-  {custo:'Custo Variável',cat:'Pessoal',    prod:'Casa'},
+  {custo:'Custo Variável',cat:'Pessoal',    prod:'Estética'},
   {custo:'Custo Variável',cat:'Pessoal',    prod:'Roupas e Acessórios'},
   {custo:'Custo Fixo',    cat:'Pessoal',    prod:'Celular'},
   {custo:'Custo Variável',cat:'Saúde',      prod:'Farmácia'},
   {custo:'Custo Variável',cat:'Saúde',      prod:'Atividade física'},
-  {custo:'Custo Variável',cat:'Saúde',      prod:'Consulta médica'},
-  {custo:'Custo Variável',cat:'Investimento',prod:'Reserva de emergência'},
-  {custo:'Custo Variável',cat:'Investimento',prod:'Investimento'},
+  {custo:'Custo Variável',cat:'Reserva',    prod:'Previdência'},
+  {custo:'Custo Variável',cat:'Reserva',    prod:'Caixinha'},
   {custo:'Custo Variável',cat:'Viagem',     prod:'Viagem'},
-  {custo:'Custo Fixo',    cat:'Trabalho',   prod:'Pag. Freelas'},
   {custo:'Custo Variável',cat:'Fatura Cartão',prod:'Fatura Cartão'},
 ];
 const CATS=[...new Set(CATS_DATA.map(c=>c.cat))];
@@ -686,7 +684,18 @@ function getCreditSplit(all,mk){
   const cr=all.filter(t=>t.type==='expense'&&isCredit(t));
   const toPay=cr.filter(t=>creditBillingMK(t.date)===mk);
   const nxt=cr.filter(t=>creditBillingMK(t.date)===nMK);
-  return{toPay,toPayTotal:toPay.reduce((s,t)=>s+t.value,0),nextBill:nxt,nextBillTotal:nxt.reduce((s,t)=>s+t.value,0),nextMK:nMK};
+  // Add active subscriptions that haven't been launched yet this month to next bill estimate
+  const today=new Date();
+  const [nY,nM]=nMK.split('-').map(Number);
+  const subsPending=subs.filter(s=>{
+    if(!s.ativa) return false;
+    const dia=s.dia_cobranca;
+    // already launched this month?
+    const alreadyNxt=all.some(t=>t.sub_id===s.id&&getMK(t.date)===nMK);
+    return !alreadyNxt;
+  });
+  const subsNextTotal=subsPending.reduce((sum,s)=>sum+(s.periodicidade==='anual'?s.value/12:s.value),0);
+  return{toPay,toPayTotal:toPay.reduce((s,t)=>s+t.value,0),nextBill:nxt,nextBillTotal:nxt.reduce((s,t)=>s+t.value,0)+subsNextTotal,subsNextTotal,nextMK:nMK};
 }
 function nextMonthLbl(mk){const[y,m]=mk.split('-').map(Number);const d=new Date(y,m,1);return MONTHS[d.getMonth()]+' '+d.getFullYear();}
 function getAllMKs(txs){const s=new Set(txs.map(t=>getMK(t.date)));s.add(curMK());return[...s].sort();}
@@ -696,7 +705,7 @@ let txs=[],subs=[],selMK=curMK(),txType='expense',cents=0,dispVal='';
 let filterCat='todas',filterConta='todas',filterType='todas',filterCusto='todas';
 let currentPage='dashboard';
 let formState={conta:'debito',cat:'Alimentação',prod:'Supermercado',custo:'Custo Variável',date:now.toISOString().slice(0,10),detalhe:'',srcIncome:'',parcelas:1};
-let subForm={nome:'',value:'',conta:'credito',cat:'Pessoal',dia:5};
+let subForm={nome:'',value:'',valueFmt:'',subCents:0,conta:'credito',cat:'Pessoal',prod:'Assinaturas',dia:5,periodicidade:'mensal'};
 let showSubForm=false,connected=false;
 
 /* ═══ CONNECTION ═══ */
@@ -736,7 +745,7 @@ function processSubscriptions(){
     const targetDate=`${mk}-${String(dia).padStart(2,'0')}`;
     const already=txs.some(t=>t.sub_id===sub.id&&getMK(t.date)===mk);
     if(!already&&now.getDate()>=dia){
-      const tx={type:'expense',value:sub.value,conta:sub.conta,cat:sub.cat,prod:sub.nome,custo:'Custo Fixo',date:targetDate,detalhe:'Assinatura automática',sub_id:sub.id,parcela_atual:null,parcela_total:null,parcela_grupo:null};
+      const tx={type:'expense',value:sub.value,conta:'credito',cat:sub.cat,prod:sub.prod||sub.nome,custo:'Custo Fixo',date:targetDate,detalhe:'Assinatura: '+sub.nome,sub_id:sub.id,parcela_atual:null,parcela_total:null,parcela_grupo:null};
       try{const saved=await insertTx(tx);txs=[saved,...txs];render();}catch(e){console.error('Assinatura',e);}
     }
   });
@@ -756,6 +765,23 @@ function popDigit(){cents=Math.floor(cents/10);refreshVal();}
 function refreshVal(){dispVal=cents===0?'':(cents/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const el=document.getElementById('val-input');if(el)el.value=dispVal;}
 function handleValKey(e){if(e.key==='Backspace'){popDigit();e.preventDefault();return;}if(/^\d$/.test(e.key)){pushDigit(parseInt(e.key,10));e.preventDefault();}else if(e.key!=='Tab')e.preventDefault();}
 function handleValChange(e){const d=e.target.value.replace(/\D/g,'');if(!d){cents=0;dispVal='';return;}cents=Math.min(parseInt(d,10),9999999);refreshVal();}
+
+/* ═══ SUB VALUE INPUT ═══ */
+function handleSubValKey(e){
+  if(e.key==='Backspace'){subForm.subCents=Math.floor(subForm.subCents/10);refreshSubVal();e.preventDefault();return;}
+  if(/^\d$/.test(e.key)){const n=subForm.subCents*10+parseInt(e.key,10);if(n<=9999999){subForm.subCents=n;refreshSubVal();}e.preventDefault();}
+  else if(e.key!=='Tab')e.preventDefault();
+}
+function handleSubValChange(e){
+  const d=e.target.value.replace(/\D/g,'');
+  if(!d){subForm.subCents=0;subForm.valueFmt='';return;}
+  subForm.subCents=Math.min(parseInt(d,10),9999999);refreshSubVal();
+}
+function refreshSubVal(){
+  subForm.value=subForm.subCents/100;
+  subForm.valueFmt=subForm.subCents===0?'':(subForm.subCents/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const el=document.getElementById('sub-val-input');if(el)el.value=subForm.valueFmt;
+}
 
 /* ═══ TOAST ═══ */
 let toastT;
@@ -797,13 +823,31 @@ function monthOpts(){return getAllMKs(txs).reverse();}
 
 /* ═══ ASSINATURAS ═══ */
 async function handleAddSub(){
-  if(!subForm.nome||!subForm.value){showToast('⚠ Preencha nome e valor');return;}
-  try{const saved=await insertSub({nome:subForm.nome,value:parseFloat(subForm.value),conta:subForm.conta,cat:subForm.cat,dia_cobranca:parseInt(subForm.dia),ativa:true});subs=[saved,...subs];subForm={nome:'',value:'',conta:'credito',cat:'Pessoal',dia:5};showSubForm=false;render();showToast('✓ Assinatura cadastrada!');}
-  catch(e){showToast('⚠ Erro: '+e.message);}
+  if(!subForm.nome||!subForm.subCents){showToast('⚠ Preencha nome e valor');return;}
+  const subProd=subForm.prod||CATS_DATA.find(c=>c.cat===subForm.cat)?.prod||subForm.cat;
+  try{
+    const saved=await insertSub({
+      nome:subForm.nome,value:subForm.value,conta:'credito',
+      cat:subForm.cat,prod:subProd,
+      dia_cobranca:parseInt(subForm.dia),
+      periodicidade:subForm.periodicidade||'mensal',
+      ativa:true
+    });
+    subs=[saved,...subs];
+    subForm={nome:'',value:'',valueFmt:'',subCents:0,conta:'credito',cat:'Pessoal',prod:'Assinaturas',dia:5,periodicidade:'mensal'};
+    showSubForm=false;render();showToast('✓ Assinatura cadastrada!');
+  }catch(e){showToast('⚠ Erro: '+e.message);}
 }
 async function toggleSub(id,ativa){
   try{await updateSubDB(id,{ativa:!ativa});subs=subs.map(s=>s.id===id?{...s,ativa:!ativa}:s);render();showToast(!ativa?'✓ Reativada':'Assinatura cancelada');}
   catch(e){showToast('⚠ Erro');}
+}
+
+async function deleteSub(id){
+  try{
+    await sh(`subscriptions?id=eq.${id}`,{method:'DELETE'});
+    subs=subs.filter(s=>s.id!==id);render();showToast('Assinatura apagada.');
+  }catch(e){showToast('⚠ Erro ao apagar');}
 }
 
 /* ═══ RESET ═══ */
@@ -824,9 +868,15 @@ function checkReminder(){
 
 /* ═══ PUSH ═══ */
 async function requestPush(){
-  if(!('Notification'in window)){showToast('Navegador não suporta notificações');return;}
-  const p=await Notification.requestPermission();
-  if(p==='granted'){localStorage.setItem('gestao_push','1');schedulePush();showToast('✓ Notificações ativadas!');}
+  if(!('Notification'in window)||!('permission'in Notification)){
+    showToast('⚠ Abra o app pelo GitHub Pages para ativar notificações');return;
+  }
+  try{
+    const p=await Notification.requestPermission();
+    if(p==='granted'){localStorage.setItem('gestao_push','1');schedulePush();showToast('✓ Notificações ativadas! Lembrete toda sexta.');}
+    else if(p==='denied'){showToast('⚠ Notificações bloqueadas. Habilite nas configurações do navegador.');}
+    else{showToast('Permissão necessária para ativar lembretes.');}
+  }catch(e){showToast('⚠ Erro ao ativar notificações: '+e.message);}
 }
 function schedulePush(){
   if(localStorage.getItem('gestao_push')!=='1')return;
@@ -995,7 +1045,7 @@ function render(){
   const barInc=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='income').reduce((s,t)=>s+t.value,0));
   const barExp=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='expense'&&!isCredit(t)).reduce((s,t)=>s+t.value,0));
   const barCred=barMKs.map(mk=>txs.filter(t=>getMK(t.date)===mk&&t.type==='expense'&&isCredit(t)).reduce((s,t)=>s+t.value,0));
-  const reserva=expenses.filter(t=>t.cat==='Investimento').reduce((s,t)=>s+t.value,0);
+  const reserva=expenses.filter(t=>t.cat==='Reserva').reduce((s,t)=>s+t.value,0);
   const score=calcScore(totalInc,totalExp,reserva);
   const prodsFilt=CATS_DATA.filter(c=>c.cat===formState.cat);
   const pushOk=localStorage.getItem('gestao_push')==='1';
@@ -1016,14 +1066,17 @@ function render(){
         ${monthSel}
       </div>
 
-      <!-- META RESERVA -->
+      <!-- SCORE + META RESERVA -->
       <div class="glass meta-bar-wrap">
         <div class="meta-bar-hd">
           <div class="meta-bar-title">
             ${icoSvg('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',14)}
             Meta de Reserva
           </div>
-          <div class="meta-bar-amt">${fmt(reserva)} / ${fmt(META_RES)}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="score-badge ${score.cls}">${score.label}</span>
+            <div class="meta-bar-amt">${fmt(reserva)} / ${fmt(META_RES)}</div>
+          </div>
         </div>
         <div class="meta-bar"><div class="meta-bar-fill" style="width:${Math.min(reserva/META_RES*100,100)}%;background:${reserva>=META_RES?'var(--pos)':'var(--warn)'}"></div></div>
         <div class="meta-bar-note">${reserva>=META_RES?'✓ Meta atingida este mês':'Faltam '+fmt(Math.max(0,META_RES-reserva))+' para a meta mensal'}</div>
@@ -1325,6 +1378,7 @@ function render(){
   else if(currentPage==='assinaturas'){
     const ativas=subs.filter(s=>s.ativa),inativas=subs.filter(s=>!s.ativa);
     const totalMensal=ativas.reduce((s,sub)=>s+sub.value,0);
+    const subProdsFilt=CATS_DATA.filter(c=>c.cat===subForm.cat);
     main.innerHTML=`
       <div class="ph">
         <div><div class="ph-title">Assinaturas</div><div class="ph-sub">cobranças recorrentes</div></div>
@@ -1340,34 +1394,55 @@ function render(){
           <div class="sub-ico">${icoSvg('<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>',18)}</div>
           <div class="sub-body">
             <div class="sub-name">${s.nome}</div>
-            <div class="sub-meta">Todo dia ${s.dia_cobranca} · ${CONTA_META[s.conta]?.label||s.conta} · ${s.cat}</div>
+            <div class="sub-meta">${s.periodicidade==='anual'?'Anual · dia '+s.dia_cobranca:'Mensal · dia '+s.dia_cobranca} · ${s.cat} · ${s.prod||''}</div>
             <div style="margin-top:6px"><span class="badge-ativa">${icoSvg('<circle cx="12" cy="12" r="10"/>',9)} Ativa</span></div>
           </div>
           <div>
             <div class="sub-val">${fmt(s.value)}</div>
-            <button class="btn btn-sm btn-danger" style="margin-top:8px" onclick="toggleSub('${s.id}',true)">${icoSvg('<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',12)} Cancelar</button>
+            ${s.periodicidade==='anual'?`<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px">${fmt(s.value/12)}/mês</div>`:''}
+            <button class="btn btn-sm btn-danger" style="margin-top:8px" onclick="toggleSub('${s.id}',true)">${icoSvg('<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',12)} Cancelar</button>
           </div>
         </div>`).join('')}
-        ${ativas.length>0?`<div class="sub-total-bar"><span style="font-size:12px;color:var(--text2);font-weight:400">Total mensal automático</span><span style="font-size:16px;font-weight:600;color:var(--warn)">${fmt(totalMensal)}</span></div>`:''}
+        ${ativas.length>0?`<div class="sub-total-bar"><span style="font-size:12px;color:var(--text2);font-weight:400">Total mensal no crédito</span><span style="font-size:16px;font-weight:600;color:var(--warn)">${fmt(totalMensal)}</span></div>`:''}
         ${showSubForm?`<div class="sub-add-form">
           <div style="font-size:13px;font-weight:600;margin-bottom:16px;color:var(--text)">Nova Assinatura</div>
           <div class="form-stack">
-            <div class="form-row">
-              <div class="fg"><div class="flbl">Nome</div><input class="fi" type="text" placeholder="Ex: Netflix" value="${subForm.nome}" oninput="subForm.nome=this.value"></div>
-              <div class="fg"><div class="flbl">Valor (R$)</div><input class="fi" type="number" step="0.01" placeholder="0,00" value="${subForm.value}" oninput="subForm.value=this.value"></div>
+            <div class="fg">
+              <div class="flbl">Nome do serviço</div>
+              <input class="fi" type="text" placeholder="Ex: Netflix, Spotify..." value="${subForm.nome}" oninput="subForm.nome=this.value">
             </div>
             <div class="form-row">
-              <div class="fg"><div class="flbl">Dia de cobrança</div><input class="fi" type="number" min="1" max="28" value="${subForm.dia}" oninput="subForm.dia=this.value"></div>
-              <div class="fg"><div class="flbl">Conta</div>
-                <select class="fs" onchange="subForm.conta=this.value">
-                  ${Object.entries(CONTA_META).map(([id,m])=>`<option value="${id}"${subForm.conta===id?' selected':''}>${m.label}</option>`).join('')}
+              <div class="fg">
+                <div class="flbl">Valor (R$)</div>
+                <input class="fi" id="sub-val-input" type="text" inputmode="numeric" placeholder="0,00"
+                  value="${subForm.valueFmt||''}"
+                  onkeydown="handleSubValKey(event)" oninput="handleSubValChange(event)">
+              </div>
+              <div class="fg">
+                <div class="flbl">Periodicidade</div>
+                <select class="fs" onchange="subForm.periodicidade=this.value;render()">
+                  <option value="mensal"${(subForm.periodicidade||'mensal')==='mensal'?' selected':''}>Mensal</option>
+                  <option value="anual"${subForm.periodicidade==='anual'?' selected':''}>Anual</option>
                 </select>
               </div>
             </div>
-            <div class="fg"><div class="flbl">Categoria</div>
-              <select class="fs" onchange="subForm.cat=this.value">
-                ${CATS.map(c=>`<option value="${c}"${subForm.cat===c?' selected':''}>${c}</option>`).join('')}
-              </select>
+            <div class="fg">
+              <div class="flbl">Dia de cobrança</div>
+              <input class="fi" type="number" min="1" max="28" value="${subForm.dia}" oninput="subForm.dia=this.value">
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <div class="flbl">Categoria</div>
+                <select class="fs" onchange="subForm.cat=this.value;subForm.prod='';render()">
+                  ${CATS.map(c=>`<option value="${c}"${subForm.cat===c?' selected':''}>${c}</option>`).join('')}
+                </select>
+              </div>
+              <div class="fg">
+                <div class="flbl">Produto</div>
+                <select class="fs" onchange="subForm.prod=this.value">
+                  ${subProdsFilt.map(p=>`<option value="${p.prod}"${subForm.prod===p.prod?' selected':''}>${p.prod}</option>`).join('')}
+                </select>
+              </div>
             </div>
             <button class="btn-primary" onclick="handleAddSub()">${icoSvg('<polyline points="20 6 9 17 4 12"/>',16)} Cadastrar Assinatura</button>
             <button class="bk-btn-skip" onclick="showSubForm=false;render()">Cancelar</button>
@@ -1375,16 +1450,19 @@ function render(){
         </div>`:''}
       </div>
       ${inativas.length>0?`
-        <div class="comp-section-title">Canceladas</div>
+        <div class="comp-section-title" style="margin-top:4px">Canceladas</div>
         <div class="table-card glass">
           ${inativas.map(s=>`<div class="sub-card" style="opacity:.55">
             <div class="sub-ico" style="background:rgba(200,185,158,.2)">${icoSvg('<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>',18)}</div>
             <div class="sub-body">
               <div class="sub-name">${s.nome}</div>
-              <div class="sub-meta">Dia ${s.dia_cobranca} · ${fmt(s.value)}/mês</div>
-              <div style="margin-top:5px"><span class="badge-inativa">Cancelada</span></div>
+              <div class="sub-meta">${s.periodicidade==='anual'?'Anual':'Mensal'} · ${fmt(s.value)}</div>
+              <span class="badge-inativa">Cancelada</span>
             </div>
-            <button class="btn btn-sm" onclick="toggleSub('${s.id}',false)">${icoSvg('<polyline points="23 4 23 10 17 10"/><path d="M1 14l4.64 4.36A9 9 0 0020.49 15"/>',13)} Reativar</button>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+              <button class="btn btn-sm" onclick="toggleSub('${s.id}',false)">${icoSvg('<polyline points="23 4 23 10 17 10"/><path d="M1 14l4.64 4.36A9 9 0 0020.49 15"/>',13)} Reativar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteSub('${s.id}')">${icoSvg('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>',13)} Apagar</button>
+            </div>
           </div>`).join('')}
         </div>`:''}
     `;
